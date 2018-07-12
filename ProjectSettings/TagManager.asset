@@ -6,6 +6,7 @@ TagManager:
   tags:
   - BoxTile
   - BoxTileAnchor
+  - Floor
   layers:
   - Default
   - TransparentFX
