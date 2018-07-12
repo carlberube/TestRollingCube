@@ -10,6 +10,11 @@ public class Controller : MonoBehaviour
     private float offset = 0.5f;  // Assues a cube of 1 unit on a side.
     private Transform tr;
     public bool rotating = false;
+    private bool swiping = false;
+
+
+    private Vector2 touchdirection = Vector2.zero;
+    private Vector2 touch_start = Vector2.zero;
     private List<GameObject> visitedTiles = new List<GameObject>();
     private GameObject lastAnchorVisited = null;
     private Vector3 startPos;
@@ -58,9 +63,9 @@ public class Controller : MonoBehaviour
             axis = Vector3.forward;
         }
 
-        if (Input.GetMouseButton(0))
+        if(Input.touches.Length > 0)
         {
-            GetMousePosAndAxis(out pos, out axis);
+            GetTouchPosAndAxis(out pos, out axis);
         }
 
         RotateCube(pos, axis, 90.0f);
@@ -72,50 +77,51 @@ public class Controller : MonoBehaviour
         {
             return;
         }
-        RaycastHit tileDirectionHit;
-        RaycastHit hitInside;
-        // Do the rotation
+        //RaycastHit tileDirectionHit;
+        //RaycastHit hitInside;
+        //// Do the rotation
 
-        Vector3 direction = Vector3.Cross(axis, Vector3.up);
-        Vector3 destination = new Vector3((pos.x + (direction.x / 2)),
-                                          0.012f,
-                                          (pos.z + (direction.z / 2)));
-        GameObject current_tile_for_direction = null;
-        // Checking if we can move in the direction we want by : 
-        if (Physics.Raycast(transform.position, direction, out tileDirectionHit))
-        {
-            if (tileDirectionHit.collider.CompareTag("BoxTile"))
-            {
-                current_tile_for_direction = tileDirectionHit.collider.gameObject;
-            }
-        }
-        if (Physics.Raycast(pos, direction, out hitInside))
-        {
-            if (hitInside.collider.CompareTag("BoxTileAnchor"))
-            {
-                GameObject tileAnchor = hitInside.collider.gameObject;
-                if (tileAnchor.transform.childCount < 1)
-                {
-                    // Maybe it's an empty anchor, check for its tile
-                    // and see if it matches ours
-                    if (current_tile_for_direction != tileAnchor.GetComponent<BoxTileAnchorController>().boxTile)
-                    {
-                        pos = Vector3.zero;
-                    }
-                }
-                else if (current_tile_for_direction != null)
-                {
-                    pos = Vector3.zero;
-                }
-            }
-        }
-        else
-        {
-            if (destination != startPos)
-            {
-                pos = Vector3.zero;
-            }
-        }
+        //Vector3 direction = Vector3.Cross(axis, Vector3.up);
+        //Vector3 destination = new Vector3((pos.x + (direction.x / 2)),
+        //                                  0.012f,
+        //                                  (pos.z + (direction.z / 2)));
+        //GameObject current_tile_for_direction = null;
+        //// Checking if we can move in the direction we want by : 
+        //if (Physics.Raycast(transform.position, direction, out tileDirectionHit))
+        //{
+        //    if (tileDirectionHit.collider.CompareTag("BoxTile"))
+        //    {
+        //        current_tile_for_direction = tileDirectionHit.collider.gameObject;
+        //    }
+        //}
+        //if (Physics.Raycast(pos, direction, out hitInside))
+        //{
+        //    if (hitInside.collider.CompareTag("BoxTileAnchor"))
+        //    {
+        //        GameObject tileAnchor = hitInside.collider.gameObject;
+        //        if (tileAnchor.transform.childCount < 1)
+        //        {
+        //            // Maybe it's an empty anchor, check for its tile
+        //            // and see if it matches ours
+        //            if (current_tile_for_direction != tileAnchor.GetComponent<BoxTileAnchorController>().boxTile)
+        //            {
+        //                StartCoroutine(DoRotation(pos, axis, 20.0f));
+        //                pos = Vector3.zero;
+        //            }
+        //        }
+        //        else if (current_tile_for_direction != null)
+        //        {
+        //            pos = Vector3.zero;
+        //        }
+        //    }
+        //}
+        //else
+        //{
+        //    if (destination != startPos)
+        //    {
+        //        pos = Vector3.zero;
+        //    }
+        //}
         if (pos != Vector3.zero)
         {
             if (rotating)
@@ -186,6 +192,82 @@ public class Controller : MonoBehaviour
                                           tr.position.z - offset);
                         axis = -Vector3.right;
                     }
+                }
+            }
+        }
+    }
+
+    private void GetTouchPosAndAxis(out Vector3 pos, out Vector3 axis)
+    {
+        pos = Vector3.zero;
+        axis = Vector3.zero;
+
+        bool directionChosen = false;
+        // Track a single touch as a direction control.
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+
+            // Handle finger movements based on touch phase.
+            switch (touch.phase)
+            {
+                // Record initial touch position.
+                case TouchPhase.Began:
+                    touch_start = touch.position;
+                    directionChosen = false;
+                    break;
+
+                // Determine direction by comparing the current touch position with the initial one.
+                case TouchPhase.Moved:
+                    touchdirection = touch.position - touch_start;
+                    break;
+
+                // Report that a direction has been chosen when the finger is lifted.
+                case TouchPhase.Ended:
+                    directionChosen = true;
+                    break;
+            }
+        }
+        if (directionChosen)
+        {
+            print("Direction : " + touchdirection);
+            if(Mathf.Abs(touchdirection.x) < 0.5f && Mathf.Abs(touchdirection.y) < 0.5f)
+            {
+                return;
+            }
+            // Something that uses the chosen direction...
+            if (Mathf.Abs(touchdirection.x) > Mathf.Abs(touchdirection.y))
+            {
+                if (touchdirection.x < 0)
+                {
+                    pos = new Vector3(tr.position.x,
+                                        tr.position.y - offset,
+                                        tr.position.z + offset);
+                    axis = Vector3.right;
+                }
+                else
+                {
+                    pos = new Vector3(tr.position.x,
+                                        tr.position.y - offset,
+                                        tr.position.z - offset);
+                    axis = -Vector3.right;
+                }
+            }
+            else
+            {
+                if (touchdirection.y < 0)
+                {
+                    pos = new Vector3(tr.position.x - offset,
+                                        tr.position.y - offset,
+                                        tr.position.z);
+                    axis = Vector3.forward;
+                }
+                else
+                {
+                    pos = new Vector3(tr.position.x + offset,
+                                        tr.position.y - offset,
+                                        tr.position.z);
+                    axis = -Vector3.forward;
                 }
             }
         }
