@@ -34,28 +34,28 @@ public class Controller : MonoBehaviour
         Vector3 pos = Vector3.zero;
         Vector3 axis = Vector3.zero;
 
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
             pos = new Vector3(tr.position.x, 
                               tr.position.y - offset, 
                               tr.position.z + offset);
             axis = Vector3.right;
         }
-        else if (Input.GetKeyDown(KeyCode.DownArrow))
+        else if (Input.GetKeyDown(KeyCode.RightArrow))
         {
             pos = new Vector3(tr.position.x, 
                               tr.position.y - offset, 
                               tr.position.z - offset);
             axis = -Vector3.right;
         }
-        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        else if (Input.GetKeyDown(KeyCode.UpArrow))
         {
             pos = new Vector3(tr.position.x + offset, 
                               tr.position.y - offset, 
                               tr.position.z);
             axis = -Vector3.forward;
         }
-        else if (Input.GetKeyDown(KeyCode.LeftArrow))
+        else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             pos = new Vector3(tr.position.x - offset, 
                               tr.position.y - offset, 
@@ -77,62 +77,42 @@ public class Controller : MonoBehaviour
         {
             return;
         }
-        //RaycastHit tileDirectionHit;
-        //RaycastHit hitInside;
-        //// Do the rotation
-
-        //Vector3 direction = Vector3.Cross(axis, Vector3.up);
-        //Vector3 destination = new Vector3((pos.x + (direction.x / 2)),
-        //                                  0.012f,
-        //                                  (pos.z + (direction.z / 2)));
-        //GameObject current_tile_for_direction = null;
-        //// Checking if we can move in the direction we want by : 
-        //if (Physics.Raycast(transform.position, direction, out tileDirectionHit))
-        //{
-        //    if (tileDirectionHit.collider.CompareTag("BoxTile"))
-        //    {
-        //        current_tile_for_direction = tileDirectionHit.collider.gameObject;
-        //    }
-        //}
-        //if (Physics.Raycast(pos, direction, out hitInside))
-        //{
-        //    if (hitInside.collider.CompareTag("BoxTileAnchor"))
-        //    {
-        //        GameObject tileAnchor = hitInside.collider.gameObject;
-        //        if (tileAnchor.transform.childCount < 1)
-        //        {
-        //            // Maybe it's an empty anchor, check for its tile
-        //            // and see if it matches ours
-        //            if (current_tile_for_direction != tileAnchor.GetComponent<BoxTileAnchorController>().boxTile)
-        //            {
-        //                StartCoroutine(DoRotation(pos, axis, 20.0f));
-        //                pos = Vector3.zero;
-        //            }
-        //        }
-        //        else if (current_tile_for_direction != null)
-        //        {
-        //            pos = Vector3.zero;
-        //        }
-        //    }
-        //}
-        //else
-        //{
-        //    if (destination != startPos)
-        //    {
-        //        pos = Vector3.zero;
-        //    }
-        //}
+        RaycastHit tileDirectionHit;
+        Vector3 direction = Vector3.Cross(axis, Vector3.up);
+        Vector3 destination = new Vector3((pos.x + (direction.x / 2)),
+                                          0,
+                                          (pos.z + (direction.z / 2)));
+        GameObject current_tile_for_direction = null;
+        // Checking if we can move in the direction we want by : 
+        if (Physics.Raycast(transform.position, direction, out tileDirectionHit))
+        {
+            if (tileDirectionHit.collider.CompareTag("BoxTile"))
+            {
+                current_tile_for_direction = tileDirectionHit.collider.gameObject;
+            }
+        }
+        int grid_x;
+        int grid_z;
+        GridController.GetPositionOnGrid(destination, out grid_x, out grid_z);
+        if(grid_x == -1 | grid_z == -1)
+        {
+            return;
+        }
+        if(grid_x >= GridController.grid_height | grid_z >= GridController.grid_width)
+        {
+            return;
+        }
+        Transform tile_anchor = GridController.grid[grid_x, grid_z];
+        if(tile_anchor.childCount == 1)
+        {
+            if (current_tile_for_direction)
+            {
+                return;
+            }
+        }
         if (pos != Vector3.zero)
         {
-            if (rotating)
-            {
-                speed = speed * 2;
-            }
-            else
-            {
-                speed = original_speed;
-                StartCoroutine(DoRotation(pos, axis, 90.0f));
-            }
+            StartCoroutine(DoRotation(pos, axis, 90.0f));
         }
     }
 
@@ -279,6 +259,10 @@ public class Controller : MonoBehaviour
         {
             GameObject boxTile = other.GetComponent<BoxTileAnchorController>().boxTile;
             // Parent the object to the cube
+            if(boxTile == null)
+            {
+                return;
+            }
             BoxCollider boxTileCollider = boxTile.GetComponent<BoxCollider>();
 
             if (boxTile.transform.parent != transform)
