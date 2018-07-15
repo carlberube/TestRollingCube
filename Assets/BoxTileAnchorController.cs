@@ -22,24 +22,24 @@ public class BoxTileAnchorController : MonoBehaviour {
 
     private void OnTriggerStay(Collider other)
     {
-        if(other.transform.parent && other.transform.parent != transform)
-        {
-            if (other.transform.parent.GetComponent<Controller>())
-            {
-                bool rotating = other.transform.parent.GetComponent<Controller>().rotating;
-                if (other.gameObject.CompareTag("BoxTile"))
-                {
-                    if (other.gameObject == boxTile) // That's our own Box Tile! 
-                    {
-                        if (!rotating)
-                        {
-                            //Reparent it
-                            other.transform.SetParent(transform);
-                            other.GetComponent<BoxCollider>().enabled = false;
-                        }
-                    }
-                }
-            }
-        }
+        //if (other.transform.parent && other.transform.parent != transform)
+        //{
+        //    if (other.transform.parent.GetComponent<Controller>())
+        //    {
+        //        bool rotating = other.transform.parent.GetComponent<Controller>().rotating;
+        //        if (other.gameObject.CompareTag("BoxTile"))
+        //        {
+        //            if (other.gameObject == boxTile) // That's our own Box Tile! 
+        //            {
+        //                if (!rotating)
+        //                {
+        //                    Reparent it
+        //                    other.transform.SetParent(transform);
+        //                    other.GetComponent<BoxCollider>().enabled = false;
+        //                }
+        //            }
+        //        }
+        //    }
+        //}
     }
 }

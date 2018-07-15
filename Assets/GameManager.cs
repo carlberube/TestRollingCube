@@ -18,7 +18,10 @@ public class GameManager : MonoBehaviour {
     }
 	// Update is called once per frame
 	void Update () {
-
+        if (!cube_instance)
+        {
+            cubeInPlay = false;
+        }
         if (Input.GetMouseButtonDown(0))
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -44,15 +47,17 @@ public class GameManager : MonoBehaviour {
                     cubeInPlay = true;
                     DestroyParticleCubes();
                 }
-                if (cubeInPlay)
-                {
-
-                    //print("Moving cube!!!");
-                }
             }
         }
-
-        if (!cubeInPlay)
+        if (cubeInPlay)
+        {
+            if (cube_instance.transform.childCount == 6)
+            {
+                cube_instance.GetComponent<Controller>().DestroyCube();
+            }
+            //print("Moving cube!!!");
+        }
+        else
         {
             valid_positions = GetValidSpawnPositions();
             if (particuleCubes.Count < 1)
@@ -63,51 +68,6 @@ public class GameManager : MonoBehaviour {
                 }
             }
         }
-        //// Ask the user to create a cube
-        //Ray myRay;
-        //RaycastHit hit;
-        //myRay = Camera.main.ScreenPointToRay(Input.mousePosition);
-        //if (Physics.Raycast(myRay, out hit))
-        //{
-        //    Vector3 currentPosition = hit.point;
-        //    currentPosition.x = RoundToNearestHalf(currentPosition.x);
-        //    currentPosition.y = 0f;
-        //    currentPosition.z = RoundToNearestHalf(currentPosition.z);
-        //    if (!cubeInPlay)
-        //    {
-        //        // Would've initialize the board, but for now let's just collect the 
-        //        // our boxtileanchors
-        //        boxTileAnchors = GameObject.FindGameObjectsWithTag("BoxTileAnchor");
-        //        valid_positions = GetValidSpawnPositions();
-        //        if (particuleCubes.Count < 1)
-        //        {
-        //            foreach (Vector3 position in valid_positions)
-        //            {
-        //                particuleCubes.Add(Instantiate(particleCube, position, particleCube.transform.rotation));
-        //                //GameObject capsule = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        //                //capsule.transform.SetPositionAndRotation(position, Quaternion.identity);
-        //            }
-        //        }
-        //    }
-        //    if (Input.GetMouseButton(0))
-        //    {
-
-        //        if (valid_positions.Contains(currentPosition) && !cubeInPlay)
-        //        {
-        //            currentPosition.y = objectToinstantiate.transform.position.y;
-        //            cube_instance = Instantiate(objectToinstantiate, currentPosition, Quaternion.identity);
-        //            cubeInPlay = true;
-        //            DestroyParticleCubes();
-        //        }
-        //        if (cubeInPlay)
-        //        {
-
-        //            //print("Moving cube!!!");
-        //        }
-        //    }
-        //    lastPosition = currentPosition;
-        //}
-
     }
 
     private void DestroyParticleCubes()
