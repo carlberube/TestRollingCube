@@ -1467,7 +1467,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   objectToinstantiate: {fileID: 1312581866937700, guid: cda8852fb0daead4696a1ba2ae8c9a61,
     type: 2}
-  particleCube: {fileID: 1810553177967978, guid: 0f6711420e6d6ff45905b55e5866c42a,
+  particleCube: {fileID: 1523080874118658, guid: a7051f3c5e9d39e4b8413b75aee3dcf3,
+    type: 2}
+  puff_particles: {fileID: 1611706656045088, guid: f2fd40320cdcbc44095aa5953dafb915,
     type: 2}
 --- !u!4 &1668323305
 Transform:

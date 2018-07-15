@@ -129,5 +129,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speed: 400
   rotating: 0
-  explosion_particles: {fileID: 198289018705023726, guid: 7c2e8e1ba31551f46b2baca77e83030a,
+  explosion_particles: {fileID: 1199666451676878, guid: 8a0f3103502fb3146a4288209f3bc3cf,
     type: 2}

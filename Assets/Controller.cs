@@ -20,7 +20,7 @@ public class Controller : MonoBehaviour
     private Vector3 startPos;
     private Vector3 on_click_position = Vector3.zero;
 
-    public ParticleSystem explosion_particles;
+    public GameObject explosion_particles;
 
     void Start()
     {

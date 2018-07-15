@@ -12,6 +12,8 @@ public class GameManager : MonoBehaviour {
     private List<GameObject> particuleCubes = new List<GameObject>();
     private Vector3 lastPosition = Vector3.zero;
 
+    public GameObject puff_particles;
+
     // Use this for initialization
     void Start() {
 
@@ -44,6 +46,7 @@ public class GameManager : MonoBehaviour {
                 {
                     currentPosition.y = objectToinstantiate.transform.position.y;
                     cube_instance = Instantiate(objectToinstantiate, currentPosition, Quaternion.identity);
+                    Instantiate(puff_particles, currentPosition, puff_particles.transform.rotation);
                     cubeInPlay = true;
                     DestroyParticleCubes();
                 }
