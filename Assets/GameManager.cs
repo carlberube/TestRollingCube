@@ -14,19 +14,56 @@ public class GameManager : MonoBehaviour {
 
     public GameObject puff_particles;
 
+    public GameGrid instanced_grid = null;
+    public string scene_path = "";
+    public LevelController level_controller;
+
     // Use this for initialization
     void Start() {
-
+        level_controller = new LevelController();
     }
-	// Update is called once per frame
-	void Update () {
+
+
+    void OnGUI()
+    {
+        if (GUI.Button(new Rect(10, 10, 100, 30), "Change Scene"))
+        {
+            scene_path = level_controller.LoadLevelAndGetPath(9999);
+            instanced_grid = null;
+            StartCoroutine(AssignNewGrid());
+        }
+    }
+
+    private IEnumerator AssignNewGrid()
+    {
+        yield return new WaitForFixedUpdate();
+        instanced_grid = level_controller.GetGridForScenePath(scene_path);
+        FocusCameraOnGameObject(Camera.current, instanced_grid.anchors);
+    }
+
+    // Update is called once per frame
+    void Update () {
+        if(instanced_grid == null)
+        {
+            return;
+        }
         if (!cube_instance)
         {
             cubeInPlay = false;
         }
-        if (Input.GetMouseButtonDown(0))
+        Vector2 touch_position = Vector2.zero;
+        if (Input.touchCount > 0)
         {
-            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            Touch touch = Input.GetTouch(0);
+            touch_position = touch.position;
+        }
+        else if (Input.GetMouseButtonDown(0))
+        {
+            touch_position = Input.mousePosition;
+        }
+        if(touch_position != Vector2.zero)
+        { 
+            Ray ray = Camera.main.ScreenPointToRay(touch_position);
             RaycastHit hit;
             if (Physics.Raycast(ray, out hit, Camera.main.farClipPlane))
             {
@@ -35,7 +72,7 @@ public class GameManager : MonoBehaviour {
                 print("Current Click : " + current_click);
                 int grid_x = 0;
                 int grid_z = 0;
-                GridController.GetPositionOnGrid(current_click, out grid_x, out grid_z);
+                instanced_grid.GetPositionOnGrid(current_click, out grid_x, out grid_z);
                 print("Position on Grid : " + grid_x + " , " + grid_z);
 
                 Vector3 currentPosition = hit.point;
@@ -46,6 +83,8 @@ public class GameManager : MonoBehaviour {
                 {
                     currentPosition.y = objectToinstantiate.transform.position.y;
                     cube_instance = Instantiate(objectToinstantiate, currentPosition, Quaternion.identity);
+                    Controller cube_controller = cube_instance.GetComponent<Controller>();
+                    cube_controller.instanced_grid = instanced_grid;
                     Instantiate(puff_particles, currentPosition, puff_particles.transform.rotation);
                     cubeInPlay = true;
                     DestroyParticleCubes();
@@ -58,11 +97,10 @@ public class GameManager : MonoBehaviour {
             {
                 cube_instance.GetComponent<Controller>().DestroyCube();
             }
-            //print("Moving cube!!!");
         }
         else
         {
-            valid_positions = GetValidSpawnPositions();
+            valid_positions = instanced_grid.GetValidSpawnPositions();
             if (particuleCubes.Count < 1)
             {
                 foreach (Vector3 position in valid_positions)
@@ -82,40 +120,38 @@ public class GameManager : MonoBehaviour {
         particuleCubes.Clear();
     }
 
-    private HashSet<Vector3> GetValidSpawnPositions()
-    {
-        HashSet<Vector3> valid_positions = new HashSet<Vector3>();
-        for (int z = 0; z < GridController.grid_width; ++z)
-        {
-            for (int x = 0; x < GridController.grid_height; ++x)
-            {
-                if(GridController.grid[x,z].childCount == 1)
-                {
-                    if(x + 1 < GridController.grid_height && GridController.grid[x + 1, z].childCount == 0)
-                    {
-                        valid_positions.Add(GridController.GetWorldPositionFromGrid(x + 1, z));
-                    }
-                    if (z + 1 < GridController.grid_width && GridController.grid[x, z + 1].childCount == 0)
-                    {
-                        valid_positions.Add(GridController.GetWorldPositionFromGrid(x, z + 1));
-                    }
-                    if (x > 0 && GridController.grid[x - 1, z].childCount == 0)
-                    {
-                        valid_positions.Add(GridController.GetWorldPositionFromGrid(x - 1, z));
-                    }
-                    if (z > 0 && GridController.grid[x, z - 1].childCount == 0)
-                    {
-                        valid_positions.Add(GridController.GetWorldPositionFromGrid(x, z - 1));
-                    }
-                }
-            }
-        }
-        return valid_positions;
-    }
+
 
     public static float RoundToNearestHalf(float a)
     {
         return a = Mathf.Round(a * 2f) * 0.5f;
     }
 
+    Bounds GetBoundsForGameObjects(GameObject[] game_objects)
+    {
+        Bounds bounds = new Bounds(game_objects[0].transform.position, Vector3.zero);
+        for (var i = 1; i < game_objects.Length; i++)
+            bounds.Encapsulate(game_objects[i].transform.position); 
+        return bounds;
+    }
+
+    public void FocusCameraOnGameObject(Camera c, GameObject[] game_objects)
+    {
+        Bounds b = GetBoundsForGameObjects(game_objects);
+        //Vector3 max = b.size;
+        //// Get the radius of a sphere circumscribing the bounds
+        //float radius = max.magnitude / 2f;
+        //// Get the horizontal FOV, since it may be the limiting of the two FOVs to properly encapsulate the objects
+        //float horizontalFOV = 2f * Mathf.Atan(Mathf.Tan(c.fieldOfView * Mathf.Deg2Rad / 2f) * c.aspect) * Mathf.Rad2Deg;
+        //// Use the smaller FOV as it limits what would get cut off by the frustum        
+        //float fov = Mathf.Min(c.fieldOfView, horizontalFOV);
+        //float dist = radius / (Mathf.Sin(fov * Mathf.Deg2Rad / 2f));
+        //Debug.Log("Radius = " + radius + " dist = " + dist);
+        //c.transform.localPosition = new Vector3(c.transform.localPosition.x, c.transform.localPosition.y, dist);
+        //if (c.orthographic)
+        //    c.orthographicSize = radius;
+
+        // Frame the object hierarchy
+        c.transform.LookAt(b.center);
+    }
 }

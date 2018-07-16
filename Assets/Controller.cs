@@ -22,6 +22,8 @@ public class Controller : MonoBehaviour
 
     public GameObject explosion_particles;
 
+    public GameGrid instanced_grid;
+
     void Start()
     {
         tr = transform;
@@ -95,16 +97,16 @@ public class Controller : MonoBehaviour
         }
         int grid_x;
         int grid_z;
-        GridController.GetPositionOnGrid(destination, out grid_x, out grid_z);
+        instanced_grid.GetPositionOnGrid(destination, out grid_x, out grid_z);
         if(grid_x == -1 | grid_z == -1)
         {
             return;
         }
-        if(grid_x >= GridController.grid_height | grid_z >= GridController.grid_width)
+        if(grid_x >= instanced_grid.grid_height | grid_z >= instanced_grid.grid_width)
         {
             return;
         }
-        Transform tile_anchor = GridController.grid[grid_x, grid_z];
+        Transform tile_anchor = instanced_grid.grid[grid_x, grid_z];
         if(tile_anchor.childCount == 1)
         {
             if (current_tile_for_direction)

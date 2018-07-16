@@ -3,29 +3,24 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 
-public class GridController : MonoBehaviour {
+public class GameGrid {
 
     // The Grid itself
-    public static int grid_width;
-    public static int grid_height;
-    public static Transform[,] grid = null;
+    public int grid_width;
+    public int grid_height;
+    public Transform[,] grid = null;
     public GameObject box_tile_anchor_object;
-    public static int top_z;
-    public static int top_x;
-    public static int bottom_x;
-    public static int bottom_z;
-
+    public int top_z;
+    public int top_x;
+    public int bottom_x;
+    public int bottom_z;
     public GameObject[] anchors;
-
     public TextMesh text_debug_prefab;
 
-    public void Awake()
+    public GameGrid(GameObject[] tile_anchors, GameObject anchor_object)
     {
-        anchors = new GameObject[transform.childCount];
-        for(int i = 0; i < transform.childCount; ++i)
-        {
-            anchors[i] = transform.GetChild(i).gameObject;
-        }
+        anchors = tile_anchors;
+        box_tile_anchor_object = anchor_object;
         float positive_x = 0;
         float positive_z = 0;
         float negative_x = 0;
@@ -49,12 +44,6 @@ public class GridController : MonoBehaviour {
         GenerateGrid();
     }
 
-    public static Vector3 GetWorldPositionFromGrid(int grid_x, int grid_z)
-    {
-        return new Vector3((float)grid_x + (bottom_x) + 0.5f, 0,
-                           (float)grid_z + (bottom_z) + 0.5f);
-    }
-
     private void GenerateGrid()
     {
         for (int z = 0; z < grid_width; ++z)
@@ -71,10 +60,10 @@ public class GridController : MonoBehaviour {
                 }
                 if(grid[x,z] == null)
                 {
-                    GameObject instance = Instantiate(box_tile_anchor_object,
+                    GameObject instance = GameObject.Instantiate(box_tile_anchor_object,
                                              world_position,
                                              box_tile_anchor_object.transform.rotation);
-                    Destroy(instance.transform.GetChild(0).gameObject);
+                    GameObject.Destroy(instance.transform.GetChild(0).gameObject);
                     grid[x, z] = instance.transform;
                 }
             }
@@ -92,7 +81,13 @@ public class GridController : MonoBehaviour {
         //}
     }
 
-    public static void GetPositionOnGrid(Vector3 current_position, out int grid_x, out int grid_z)
+    public Vector3 GetWorldPositionFromGrid(int grid_x, int grid_z)
+    {
+        return new Vector3((float)grid_x + (bottom_x) + 0.5f, 0,
+                           (float)grid_z + (bottom_z) + 0.5f);
+    }
+
+    public void GetPositionOnGrid(Vector3 current_position, out int grid_x, out int grid_z)
     {
         Vector3 round_pos = current_position;
         round_pos.x = RoundToNearestHalf(round_pos.x);
@@ -128,21 +123,41 @@ public class GridController : MonoBehaviour {
         }
     }
 
+    public HashSet<Vector3> GetValidSpawnPositions()
+    {
+        HashSet<Vector3> valid_positions = new HashSet<Vector3>();
+        for (int z = 0; z < grid_width; ++z)
+        {
+            for (int x = 0; x < grid_height; ++x)
+            {
+                if (grid[x, z].childCount == 1)
+                {
+                    if (x + 1 < grid_height && grid[x + 1, z].childCount == 0)
+                    {
+                        valid_positions.Add(GetWorldPositionFromGrid(x + 1, z));
+                    }
+                    if (z + 1 < grid_width && grid[x, z + 1].childCount == 0)
+                    {
+                        valid_positions.Add(GetWorldPositionFromGrid(x, z + 1));
+                    }
+                    if (x > 0 && grid[x - 1, z].childCount == 0)
+                    {
+                        valid_positions.Add(GetWorldPositionFromGrid(x - 1, z));
+                    }
+                    if (z > 0 && grid[x, z - 1].childCount == 0)
+                    {
+                        valid_positions.Add(GetWorldPositionFromGrid(x, z - 1));
+                    }
+                }
+            }
+        }
+        return valid_positions;
+    }
+
 
     public static float RoundToNearestHalf(float a)
     {
         return a = Mathf.Round(a * 2f) * 0.5f;
     }
 
-    // Use this for initialization
-    void Start ()
-    {
- 
-    }
-	
-	// Update is called once per frame
-	void Update ()
-    {
-
-    }
 }
