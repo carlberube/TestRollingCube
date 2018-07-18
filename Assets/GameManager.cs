@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour {
 
@@ -18,9 +19,17 @@ public class GameManager : MonoBehaviour {
     public string scene_path = "";
     public LevelController level_controller;
 
+    private int current_level = 0;
+    private int current_cubes;
+    private int objective_rolls = 100;
+
+    public Text objective_text;
+    private string string_to_format;
+
     // Use this for initialization
     void Start() {
         level_controller = new LevelController();
+        string_to_format = objective_text.text;
     }
 
 
@@ -28,7 +37,8 @@ public class GameManager : MonoBehaviour {
     {
         if (GUI.Button(new Rect(10, 10, 100, 30), "Change Scene"))
         {
-            scene_path = level_controller.LoadLevelAndGetPath(9999);
+            current_level = 9999;
+            scene_path = level_controller.LoadLevelAndGetPath(current_level);
             instanced_grid = null;
             StartCoroutine(AssignNewGrid());
         }
@@ -39,14 +49,34 @@ public class GameManager : MonoBehaviour {
         yield return new WaitForFixedUpdate();
         instanced_grid = level_controller.GetGridForScenePath(scene_path);
         FocusCameraOnGameObject(Camera.current, instanced_grid.anchors);
+        LevelChanged(current_level);
     }
+
+    private void LevelChanged(int level_number)
+    {
+        Objective objective = level_controller.objective_for_level_number[current_level];
+        current_cubes = 0;
+        objective_rolls = objective.rolls;
+        SetObjectiveUIText();
+    }
+
+    private void SetObjectiveUIText()
+    {
+        Objective objective = level_controller.objective_for_level_number[current_level];
+        objective_text.text = string.Format(string_to_format, current_cubes,
+                                                              objective.cubes,
+                                                              objective.rolls);
+    }
+
 
     // Update is called once per frame
     void Update () {
         if(instanced_grid == null)
         {
+            objective_text.enabled = false;
             return;
         }
+        
         if (!cube_instance)
         {
             cubeInPlay = false;
@@ -93,9 +123,13 @@ public class GameManager : MonoBehaviour {
         }
         if (cubeInPlay)
         {
+            objective_text.enabled = true;
+            SetObjectiveUIText();
             if (cube_instance.transform.childCount == 6)
             {
                 cube_instance.GetComponent<Controller>().DestroyCube();
+                current_cubes = current_cubes + 1;
+                SetObjectiveUIText();
             }
         }
         else
