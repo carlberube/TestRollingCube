@@ -5,27 +5,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-
-public class Objective
-{
-    public int level;
-    public int cubes;
-    public int rolls;
-
-    public Objective(int level_number, int cubes_amount, int total_rolls)
-    {
-        level = level_number;
-        cubes = cubes_amount;
-        rolls = total_rolls;
-    }
-}
-
-
 public class LevelController {
 
     public int level_number = 0;
     public Dictionary<int, string> scene_for_level_number = new Dictionary<int, string>();
-    public Dictionary<int, Objective> objective_for_level_number = new Dictionary<int, Objective>();
+    //public Dictionary<int, Objective> objective_for_level_number = new Dictionary<int, Objective>();
 
     private static string current_scene_path;
     public GameGrid game_grid;
@@ -33,7 +17,7 @@ public class LevelController {
     // Use this for initialization
     public LevelController() {
         scene_for_level_number[9999] = "Assets\\Scenes\\Levels\\TestLevel\\";
-        objective_for_level_number[9999] = new Objective(9999, 3, 20);
+        //objective_for_level_number[9999] = new Objective(9999, 3, 20);
     }
 
     private string GetLatestLevel(string level_path)

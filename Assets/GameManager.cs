@@ -40,33 +40,33 @@ public class GameManager : MonoBehaviour {
             current_level = 9999;
             scene_path = level_controller.LoadLevelAndGetPath(current_level);
             instanced_grid = null;
-            StartCoroutine(AssignNewGrid());
+            //StartCoroutine(AssignNewGrid());
         }
     }
 
-    private IEnumerator AssignNewGrid()
-    {
-        yield return new WaitForFixedUpdate();
-        instanced_grid = level_controller.GetGridForScenePath(scene_path);
-        FocusCameraOnGameObject(Camera.current, instanced_grid.anchors);
-        LevelChanged(current_level);
-    }
+    //private IEnumerator AssignNewGrid()
+    //{
+    //    yield return new WaitForFixedUpdate();
+    //    instanced_grid = level_controller.GetGridForScenePath(scene_path);
+    //    FocusCameraOnGameObject(Camera.current, instanced_grid.anchors);
+    //    LevelChanged(current_level);
+    //}
 
-    private void LevelChanged(int level_number)
-    {
-        Objective objective = level_controller.objective_for_level_number[current_level];
-        current_cubes = 0;
-        objective_rolls = objective.rolls;
-        SetObjectiveUIText();
-    }
+    //private void LevelChanged(int level_number)
+    //{
+    //    Objective objective = level_controller.objective_for_level_number[current_level];
+    //    current_cubes = 0;
+    //    objective_rolls = objective.rolls;
+    //    SetObjectiveUIText();
+    //}
 
-    private void SetObjectiveUIText()
-    {
-        Objective objective = level_controller.objective_for_level_number[current_level];
-        objective_text.text = string.Format(string_to_format, current_cubes,
-                                                              objective.cubes,
-                                                              objective.rolls);
-    }
+    //private void SetObjectiveUIText()
+    //{
+    //    Objective objective = level_controller.objective_for_level_number[current_level];
+    //    objective_text.text = string.Format(string_to_format, current_cubes,
+    //                                                          objective.cubes,
+    //                                                          objective.rolls);
+    //}
 
 
     // Update is called once per frame
@@ -123,14 +123,14 @@ public class GameManager : MonoBehaviour {
         }
         if (cubeInPlay)
         {
-            objective_text.enabled = true;
-            SetObjectiveUIText();
-            if (cube_instance.transform.childCount == 6)
-            {
-                cube_instance.GetComponent<Controller>().DestroyCube();
-                current_cubes = current_cubes + 1;
-                SetObjectiveUIText();
-            }
+            //objective_text.enabled = true;
+            //SetObjectiveUIText();
+            //if (cube_instance.transform.childCount == 6)
+            //{
+            //    cube_instance.GetComponent<Controller>().DestroyCube();
+            //    current_cubes = current_cubes + 1;
+            //    SetObjectiveUIText();
+            //}
         }
         else
         {

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3262ba32612eb464fbda36a864d48875, type: 3}
+  m_Name: 401
+  m_EditorClassIdentifier: 
+  netName: 401
+  thumbnailSprite: {fileID: 21300018, guid: 7cdc74d9c5d0c6646a85e035eb81dbb2, type: 3}
+  vectors:
+  - {x: -0.5, y: 0, z: 2.5}
+  - {x: 0.5, y: 0, z: 3.5}
+  - {x: 0.5, y: 0, z: 2.5}
+  - {x: 0.5, y: 0, z: 4.5}
+  - {x: 1.5, y: 0, z: 5.5}
+  - {x: 0.5, y: 0, z: 5.5}
