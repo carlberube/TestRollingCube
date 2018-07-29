@@ -15,7 +15,6 @@ public class GameGrid {
     public int bottom_x;
     public int bottom_z;
     public GameObject[] anchors;
-    public TextMesh text_debug_prefab;
 
     public GameGrid(GameObject[] tile_anchors, GameObject anchor_object)
     {
@@ -68,17 +67,6 @@ public class GameGrid {
                 }
             }
         }
-
-        //for (int z = 0; z < grid_width; ++z)
-        //{
-        //    for (int x = 0; x < grid_height; ++x)
-        //    {
-        //        Vector3 position = GetWorldPositionFromGrid(x, z);
-        //        position.z = position.z + 0.5f;
-        //        TextMesh text_mesh_instance = Instantiate(text_debug_prefab, position, text_debug_prefab.transform.rotation);
-        //        text_mesh_instance.text = string.Format("[{0},{1}]", x, z);
-        //    }
-        //}
     }
 
     public Vector3 GetWorldPositionFromGrid(int grid_x, int grid_z)

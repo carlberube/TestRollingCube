@@ -183,3 +183,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   boxTile: {fileID: 0}
+  boxTileAnchors: {fileID: 11400000, guid: f4e2d92e8b0da324487f5d4926e92ba1, type: 2}

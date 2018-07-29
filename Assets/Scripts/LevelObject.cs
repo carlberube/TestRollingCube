@@ -10,6 +10,7 @@ public class LevelObject : ScriptableObject
     public string levelPath;
     public ScriptableObject[] objectives;
     public Dictionary<string, List<Vector3>> labelForCubeNetPositions;
+
 }
 
 [CustomEditor(typeof(LevelObject))]

@@ -5,9 +5,20 @@ using UnityEngine;
 public class BoxTileAnchorController : MonoBehaviour {
 
     public GameObject boxTile;
+    public BoxTileAnchorsRuntimeSet boxTileAnchors;
 
-	// Use this for initialization
-	void Start () {
+    private void OnEnable()
+    {
+        boxTileAnchors.Add(this.gameObject);
+    }
+
+    private void OnDisable()
+    {
+        boxTileAnchors.Remove(this.gameObject);
+    }
+
+    // Use this for initialization
+    void Start () {
         foreach (Transform child in transform)
         {
             if (child.tag == "BoxTile")

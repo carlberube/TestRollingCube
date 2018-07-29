@@ -242,15 +242,34 @@ public class LevelEditorWindow : EditorWindow
             scenesPath = AssetDatabase.GUIDToAssetPath(newSceneGuid);
             EditorSceneManager.SaveScene(new_scene, scenesPath + "/LevelScene.unity");
             newLevel.levelPath = new_scene.path;
+            bool inEditorSettings = false;
+            foreach(EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
+            {
+                if(scene.path == new_scene.path)
+                {
+                    inEditorSettings = true;
+                }
+            }
+            if (!inEditorSettings)
+            {
+                List<EditorBuildSettingsScene> allScenes = EditorBuildSettings.scenes.ToList<EditorBuildSettingsScene>();
+                allScenes.Add(new EditorBuildSettingsScene(new_scene.path, true));
+                EditorBuildSettings.scenes = allScenes.ToArray();
+            }
+
             newLevel.labelForCubeNetPositions = new Dictionary<string, List<Vector3>>();
             foreach(KeyValuePair<string, List<GameObject>> entry in labelForCubeNetObjects)
             {
                 List<Vector3> tileAnchorsPositions = new List<Vector3>();
                 foreach (GameObject go in entry.Value)
                 {
+                    Vector3 new_pos = go.transform.position;
+                    new_pos.x = RoundToNearestHalf(new_pos.x);
+                    new_pos.y = RoundToNearestHalf(new_pos.y);
+                    new_pos.z = RoundToNearestHalf(new_pos.z);
+                    go.transform.position = new_pos;
                     tileAnchorsPositions.Add(go.transform.position);
                 }
-                Debug.Log(tileAnchorsPositions.Count);
                 newLevel.labelForCubeNetPositions[entry.Key] = tileAnchorsPositions;
             }
             List<ScriptableObject> new_objectives = new List<ScriptableObject>();
@@ -274,7 +293,14 @@ public class LevelEditorWindow : EditorWindow
             AssetDatabase.Refresh();
             EditorUtility.FocusProjectWindow();
             EditorSceneManager.CloseScene(new_scene, true);
+            levelNumbers = GetAllLevels();
+            selectedIndex = levelNumbers.Count();
+            objectives = GetAllObjectives();
         }
     }
 
+    public static float RoundToNearestHalf(float a)
+    {
+        return a = Mathf.Round(a * 2f) * 0.5f;
+    }
 }
