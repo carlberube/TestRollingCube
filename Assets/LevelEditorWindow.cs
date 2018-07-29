@@ -1,27 +1,33 @@
 ﻿using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 
 
 
 public class LevelEditorWindow : EditorWindow
 {
-    Vector2 scrollPos;
     int[] levelNumbers;
     CubeNet[] cubeNets;
-    ObjectiveObject[] objectives;
+    SerializedObject[] objectives;
+
+    bool unfoldedCubeNets = true;
 
     GameObject tileAnchorPrefab;
 
     public int levelNumber;
 
-
+    public Scene activeScene;
+    public Scene new_scene;
     public string levelPath;
     public int selectedIndex;
     public Dictionary<string, List<GameObject>> labelForCubeNetObjects;
-    public Dictionary<ScriptableObject, bool> toggleForObjective;
+    public Dictionary<SerializedObject, bool> toggleForObjective;
     public Dictionary<CubeNet, Texture2D> textureForCubeNet;
+    public Dictionary<SerializedObject, UnityEngine.Object> serializedObjectForInstance;
 
 
     [MenuItem("Window/Level Publisher")]
@@ -33,18 +39,17 @@ public class LevelEditorWindow : EditorWindow
 
     public void OnEnable()
     {
-        toggleForObjective = new Dictionary<ScriptableObject, bool>();
+        toggleForObjective = new Dictionary<SerializedObject, bool>();
         labelForCubeNetObjects = new Dictionary<string, List<GameObject>>();
         textureForCubeNet = new Dictionary<CubeNet, Texture2D>();
+        serializedObjectForInstance = new Dictionary<SerializedObject, UnityEngine.Object>();
         tileAnchorPrefab = (GameObject) AssetDatabase.LoadAssetAtPath("Assets/BoxTileAnchor.prefab", typeof(GameObject));
-
-        Debug.Log("TILE ANCHOR : " + tileAnchorPrefab);
-
         levelNumbers = GetAllLevels();
         cubeNets = GetAllCubeNets();
         objectives = GetAllObjectives();
+        activeScene = EditorSceneManager.GetActiveScene();
 
-        foreach(CubeNet cubeNet in cubeNets)
+        foreach (CubeNet cubeNet in cubeNets)
         {
             Sprite sprite = cubeNet.thumbnailSprite;
             var croppedTexture = new Texture2D((int)sprite.rect.width, (int)sprite.rect.height);
@@ -71,7 +76,6 @@ public class LevelEditorWindow : EditorWindow
         foreach (string guid in guids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
-            Debug.Log("LevelObject: " + path);
             LevelObject level = (LevelObject) AssetDatabase.LoadAssetAtPath(path, typeof(LevelObject));
             level_numbers.Add(level.levelNumber);
         }
@@ -86,35 +90,41 @@ public class LevelEditorWindow : EditorWindow
         foreach (string guid in guids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
-            Debug.Log("CubeNet: " + path);
             CubeNet cubeNet = (CubeNet)AssetDatabase.LoadAssetAtPath(path, typeof(CubeNet));
             cubeNets.Add(cubeNet);
         }
         return cubeNets.ToArray();
     }
 
-    private static ObjectiveObject[] GetAllObjectives()
+    private SerializedObject[] GetAllObjectives()
     {
-        List<ObjectiveObject> objectiveObjects = new List<ObjectiveObject>();
-        string[] guids;
-        guids = AssetDatabase.FindAssets("t:ObjectiveObject");
-        foreach (string guid in guids)
-        {
-            string path = AssetDatabase.GUIDToAssetPath(guid);
-            Debug.Log("ObjectiveObject: " + path);
-            ObjectiveObject objectiveObject = (ObjectiveObject)AssetDatabase.LoadAssetAtPath(path, typeof(ObjectiveObject));
-            objectiveObjects.Add(objectiveObject);
-        }
-        return objectiveObjects.ToArray();
+        TotalRollsObjective totalRollInstance = CreateInstance<TotalRollsObjective>();
+        serializedObjectForInstance[new SerializedObject(totalRollInstance)] = totalRollInstance;
+
+        StarCollectionObjective starCollectionInstance = CreateInstance<StarCollectionObjective>();
+        serializedObjectForInstance[new SerializedObject(starCollectionInstance)] = starCollectionInstance;
+
+        TotalCubesObjective totalCubeInstance = CreateInstance<TotalCubesObjective>();
+        serializedObjectForInstance[new SerializedObject(totalCubeInstance)] = totalCubeInstance;
+
+        TimeLimitObjective timeLimitInstance = CreateInstance<TimeLimitObjective>();
+        serializedObjectForInstance[new SerializedObject(timeLimitInstance)] = timeLimitInstance;
+
+        return serializedObjectForInstance.Keys.ToArray();
     }
 
     void CreateCubeNet(CubeNet cubeNet)
     {
+        if (!new_scene.IsValid())
+        {
+            new_scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+        }
+        EditorSceneManager.SetActiveScene(new_scene);
         string label = cubeNet.name;
         while (labelForCubeNetObjects.ContainsKey(label))
         {
             int index = 1;
-            label = label + index.ToString();
+            label = label + "_" + index.ToString();
             index++;
         }
         labelForCubeNetObjects[label] = new List<GameObject>();
@@ -125,6 +135,7 @@ public class LevelEditorWindow : EditorWindow
             labelForCubeNetObjects[label].Add(tileAnchor);
         }
         Selection.objects = labelForCubeNetObjects[label].ToArray();
+        EditorSceneManager.SetActiveScene(activeScene);
     }
 
     void OnGUI()
@@ -147,7 +158,6 @@ public class LevelEditorWindow : EditorWindow
             levelNumber = Int32.Parse(levelName);
         }
         GUILayout.Label("Create Cube Nets", EditorStyles.boldLabel);
-        scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
         GUILayout.BeginHorizontal();
         foreach (CubeNet cubeNet in cubeNets)
         {
@@ -159,81 +169,111 @@ public class LevelEditorWindow : EditorWindow
             }
         }
         GUILayout.EndHorizontal();
-        EditorGUILayout.EndScrollView();
 
-        //GUILayout.Label("Current Cube Nets", EditorStyles.boldLabel);
-        //bool unfolded = true;
-        //unfolded = EditorGUILayout.Foldout(unfolded, "Current Cube Nets");
-        //if (unfolded)
-        //{
-        //    EditorGUILayout.BeginHorizontal();
-        //    foreach(string label in labelForCubeNetObjects.Keys)
-        //    {
-        //        EditorGUILayout.LabelField(label);
-        //        if (GUILayout.Button("Select"))
-        //        {
-        //            Selection.objects = labelForCubeNetObjects[label].ToArray();
-        //        }
-        //        if (GUILayout.Button("Remove"))
-        //        {
-        //            foreach(GameObject boxTileAnchor in labelForCubeNetObjects[label])
-        //            {
-        //                Destroy(boxTileAnchor);
-        //            }
-        //            labelForCubeNetObjects.Remove(label);
-        //        }
-        //    }
-        //    EditorGUILayout.EndHorizontal();
-        //}
+        GUILayout.Label("Current Cube Nets", EditorStyles.boldLabel);
+        unfoldedCubeNets = EditorGUILayout.Foldout(unfoldedCubeNets, "Current Cube Nets");
+        string keyToDelete = "";
+        if (unfoldedCubeNets)
+        {
+            foreach (string label in labelForCubeNetObjects.Keys)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField(label);
+                if (GUILayout.Button("Select"))
+                {
+                    Selection.objects = labelForCubeNetObjects[label].ToArray();
+                }
+                if (GUILayout.Button("Remove"))
+                {
+                    keyToDelete = label;
+                    foreach (GameObject boxTileAnchor in labelForCubeNetObjects[label])
+                    {
+                        DestroyImmediate(boxTileAnchor);
+                    }
+                }
+                EditorGUILayout.EndHorizontal();
+            }
+            if (keyToDelete != "")
+            {
+                labelForCubeNetObjects.Remove(keyToDelete);
+            }
+        }
 
-
-        //foreach(ObjectiveObject objective in objectives)
-        //{
-        //    bool toggled = false;
-        //    toggled = EditorGUILayout.BeginToggleGroup(objective.name, toggled);
-        //    if (toggled)
-        //    {
-        //        Type typeName = objective.GetType();
-        //        var instancedObjective = CreateInstance(typeName);
-        //        foreach (ObjectiveObject current_objective in toggleForObjective.Keys)
-        //        {
-        //            if(current_objective.GetType() == objective.GetType())
-        //            {
-        //                instancedObjective = current_objective;
-        //            }
-        //        }
-        //        toggleForObjective[instancedObjective] = toggled;
-        //        Editor.CreateEditor(instancedObjective);
-        //    }
-
-        //    //foreach(var prop in objective.GetType().GetProperties())
-        //    //{
-        //    //    Type type = prop.GetType();
-        //    //    if (type == typeof(int))
-        //    //    {
-        //    //        int value = EditorGUILayout.IntField(prop.Name, value);
-        //    //    }
-        //    //    else if (type == typeof(Vector3[]))
-        //    //    {
-        //    //        EditorGUILayout.Vector3Field(prop.Name, )
-        //    //    }
-        //    //    else if (type == typeof(float))
-        //    //    {
-
-        //    //    }
-        //    //}
-        // }
-
+        foreach (SerializedObject objective in objectives)
+        {
+            bool toggled = false;
+            if (toggleForObjective.ContainsKey(objective))
+            {
+                toggled = toggleForObjective[objective];
+            }
+            SerializedProperty props = objective.GetIterator();
+            toggled = EditorGUILayout.BeginToggleGroup(objective.targetObject.ToString(), toggled);
+            toggleForObjective[objective] = toggled;
+            while (props.NextVisible(true))
+            {
+                if(objective.targetObject.GetType() == typeof(TotalCubesObjective))
+                {
+                    if(props.name == "totalCubes")
+                    {
+                        props.intValue = labelForCubeNetObjects.Keys.Count;
+                    }
+                }
+                if(props.name == "m_Script")
+                {
+                    continue;
+                }
+                EditorGUILayout.PropertyField(props, true);
+            }
+            EditorGUILayout.EndToggleGroup();
+            objective.ApplyModifiedProperties();
+        }
         if (GUILayout.Button("Publish Level"))
         {
-            //string path = "Assets/Levels";
-            //string assetPathAndName = AssetDatabase.GenerateUniqueAssetPath(path + "/" + myString + ".asset");
+            string path = "Assets/Levels";
+            string guid = AssetDatabase.CreateFolder(path, String.Format("Level{0:000}", levelNumber));
+            path = AssetDatabase.GUIDToAssetPath(guid);
+            string levelAssetPath = path + "/LevelObject";
+            string assetPathAndName = levelAssetPath + ".asset";
+            LevelObject newLevel = CreateInstance<LevelObject>();
+            newLevel.levelNumber = levelNumber;
 
-            //AssetDatabase.CreateAsset(cubeNet, assetPathAndName);
-
-            //AssetDatabase.SaveAssets();
-            //AssetDatabase.Refresh();
-            //EditorUtility.FocusProjectWindow();
+            string scenesPath = "Assets/Scenes";
+            string newSceneGuid = AssetDatabase.CreateFolder(scenesPath, String.Format("Level{0:000}", levelNumber));
+            scenesPath = AssetDatabase.GUIDToAssetPath(newSceneGuid);
+            EditorSceneManager.SaveScene(new_scene, scenesPath + "/LevelScene.unity");
+            newLevel.levelPath = new_scene.path;
+            newLevel.labelForCubeNetPositions = new Dictionary<string, List<Vector3>>();
+            foreach(KeyValuePair<string, List<GameObject>> entry in labelForCubeNetObjects)
+            {
+                List<Vector3> tileAnchorsPositions = new List<Vector3>();
+                foreach (GameObject go in entry.Value)
+                {
+                    tileAnchorsPositions.Add(go.transform.position);
+                }
+                Debug.Log(tileAnchorsPositions.Count);
+                newLevel.labelForCubeNetPositions[entry.Key] = tileAnchorsPositions;
+            }
+            List<ScriptableObject> new_objectives = new List<ScriptableObject>();
+            AssetDatabase.CreateAsset(newLevel, assetPathAndName);
+            foreach (SerializedObject objective in objectives)
+            {
+                if (toggleForObjective.ContainsKey(objective))
+                {
+                    if (toggleForObjective[objective])
+                    {
+                        ScriptableObject instance = serializedObjectForInstance[objective] as ScriptableObject;
+                        string objectiveName = instance.ToString().Replace(" (", "").Replace(")", "");
+                        string objectiveAssetPath = path + "/" + objectiveName + ".asset";
+                        AssetDatabase.CreateAsset(instance, objectiveAssetPath);
+                        new_objectives.Add(instance);
+                    }
+                }
+            }
+            newLevel.objectives = new_objectives.ToArray();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            EditorUtility.FocusProjectWindow();
+            EditorSceneManager.CloseScene(new_scene, true);
         }
     }
 
