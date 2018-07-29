@@ -16,8 +16,16 @@ public class Spawner : MonoBehaviour {
 
     public void OnLevelLoaded()
     {
-        instancedGrid = new GameGrid(tileAnchors.Items.ToArray(), tileAnchors.Items[0]);
-        validPositions.Items = instancedGrid.GetValidSpawnPositions().ToList();
+        List<GameObject> gameObjects = new List<GameObject>();
+        foreach(BoxTileAnchorController controller in tileAnchors.Items)
+        {
+            gameObjects.Add(controller.gameObject);
+        }
+        instancedGrid = new GameGrid(gameObjects.ToArray(), gameObjects[0]);
+        foreach(Vector3 position in instancedGrid.GetValidSpawnPositions())
+        {
+            validPositions.Add(position);
+        }
     }
 
     // Update is called once per frame

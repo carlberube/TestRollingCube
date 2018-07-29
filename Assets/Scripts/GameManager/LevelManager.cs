@@ -13,6 +13,7 @@ public class LevelManager : MonoBehaviour {
 
     public UnityEvent onLevelLoaded;
     public UnityEvent onLevelStarted;
+    private Scene currentScene;
 
     private static List<LevelObject> GetAllLevels()
     {
@@ -41,8 +42,8 @@ public class LevelManager : MonoBehaviour {
 
     public void LoadLevel()
     {
-        Scene currentScene = SceneManager.GetActiveScene();
-        if(currentLevel != null)
+        currentScene = SceneManager.GetActiveScene();
+        if (currentLevel != null)
         {
             SceneManager.UnloadSceneAsync(currentLevel.levelPath);
         }
@@ -59,15 +60,16 @@ public class LevelManager : MonoBehaviour {
             return;
         }
         SceneManager.LoadSceneAsync(currentLevel.levelPath, LoadSceneMode.Additive);
-        StartCoroutine(WaitForLevelLoad());
-        SceneManager.SetActiveScene(currentScene);
+        SceneManager.sceneLoaded += OnLevelFinishedLoading;
     }
 
-    private IEnumerator WaitForLevelLoad()
+    void OnLevelFinishedLoading(Scene scene, LoadSceneMode mode)
     {
-        yield return new WaitForFixedUpdate();
+        Debug.Log("Level Loaded");
+        SceneManager.sceneLoaded -= OnLevelFinishedLoading;
+        SceneManager.SetActiveScene(scene);
         onLevelLoaded.Invoke();
-        
+        SceneManager.SetActiveScene(currentScene);
     }
 
 }

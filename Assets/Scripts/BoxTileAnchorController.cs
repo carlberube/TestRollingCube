@@ -9,12 +9,12 @@ public class BoxTileAnchorController : MonoBehaviour {
 
     private void OnEnable()
     {
-        boxTileAnchors.Add(this.gameObject);
+        boxTileAnchors.Add(this);
     }
 
     private void OnDisable()
     {
-        boxTileAnchors.Remove(this.gameObject);
+        boxTileAnchors.Remove(this);
     }
 
     // Use this for initialization

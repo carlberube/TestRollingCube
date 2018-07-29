@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-
+using System.Collections.Generic;
 
 public class CameraController : MonoBehaviour {
 
@@ -15,8 +15,12 @@ public class CameraController : MonoBehaviour {
 
     public void FocusCameraOnGameObject()
     {
-        GameObject[] gameObjects = boxTileAnchors.Items.ToArray();
-        Bounds b = GetBoundsForGameObjects(gameObjects);
+        List<GameObject> gameObjects = new List<GameObject>();
+        foreach(BoxTileAnchorController controller in boxTileAnchors.Items)
+        {
+            gameObjects.Add(controller.gameObject);
+        }
+        Bounds b = GetBoundsForGameObjects(gameObjects.ToArray());
         //Vector3 max = b.size;
         //// Get the radius of a sphere circumscribing the bounds
         //float radius = max.magnitude / 2f;

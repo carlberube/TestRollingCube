@@ -2,15 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CubeDestruction : MonoBehaviour {
-
-
+public class CubeDestruction : MonoBehaviour
+{
     public GameObject explosion_particles;
-    private bool exploding = false;
 
     public void DestroyCube()
     {
-        exploding = true;
         Instantiate(explosion_particles, transform.position, transform.rotation);
         List<Transform> parent_less = new List<Transform>();
         foreach (Transform child in transform)
