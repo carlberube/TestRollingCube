@@ -62,7 +62,9 @@ public class GameGrid {
                     GameObject instance = GameObject.Instantiate(box_tile_anchor_object,
                                              world_position,
                                              box_tile_anchor_object.transform.rotation);
-                    GameObject.Destroy(instance.transform.GetChild(0).gameObject);
+                    Transform child = instance.transform.GetChild(0);
+                    instance.transform.DetachChildren();
+                    GameObject.Destroy(child.gameObject);
                     grid[x, z] = instance.transform;
                 }
             }
