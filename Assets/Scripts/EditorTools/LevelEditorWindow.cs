@@ -19,12 +19,14 @@ public class LevelEditorWindow : EditorWindow
     GameObject tileAnchorPrefab;
 
     public int levelNumber;
-
+    public bool existingLevelLoaded = false;
+    public LevelObject levelToEdit = null;
     public Scene activeScene;
     public Scene new_scene;
+    public Scene levelScene;
     public string levelPath;
     public int selectedIndex;
-    public Dictionary<string, List<GameObject>> labelForCubeNetObjects;
+    public Dictionary<string, GameObject> labelForCubeNetObject;
     public Dictionary<SerializedObject, bool> toggleForObjective;
     public Dictionary<CubeNet, Texture2D> textureForCubeNet;
     public Dictionary<SerializedObject, UnityEngine.Object> serializedObjectForInstance;
@@ -39,16 +41,9 @@ public class LevelEditorWindow : EditorWindow
 
     public void OnEnable()
     {
-        toggleForObjective = new Dictionary<SerializedObject, bool>();
-        labelForCubeNetObjects = new Dictionary<string, List<GameObject>>();
-        textureForCubeNet = new Dictionary<CubeNet, Texture2D>();
-        serializedObjectForInstance = new Dictionary<SerializedObject, UnityEngine.Object>();
-        tileAnchorPrefab = (GameObject) AssetDatabase.LoadAssetAtPath("Assets/BoxTileAnchor.prefab", typeof(GameObject));
-        levelNumbers = GetAllLevels();
-        cubeNets = GetAllCubeNets();
-        objectives = GetAllObjectives();
+        InitVars();
         activeScene = EditorSceneManager.GetActiveScene();
-
+        selectedIndex = 0;
         foreach (CubeNet cubeNet in cubeNets)
         {
             Sprite sprite = cubeNet.thumbnailSprite;
@@ -63,20 +58,75 @@ public class LevelEditorWindow : EditorWindow
         }
     }
 
+    public void InitVars()
+    {
+        toggleForObjective = new Dictionary<SerializedObject, bool>();
+        labelForCubeNetObject = new Dictionary<string, GameObject>();
+        textureForCubeNet = new Dictionary<CubeNet, Texture2D>();
+        tileAnchorPrefab = (GameObject)AssetDatabase.LoadAssetAtPath("Assets/BoxTileAnchor.prefab", typeof(GameObject));
+        levelNumbers = GetAllLevelsNumbers();
+        cubeNets = GetAllCubeNets();
+        objectives = GetAllObjectives();
+    }
+
+    public void InitFromLevel(LevelObject levelToEdit)
+    {
+        if (existingLevelLoaded) return;
+        bool loaded = false;
+        objectives = GetAllObjectives(levelToEdit);
+        for (int i = 0; i < EditorSceneManager.sceneCount; i++)
+        {
+            Scene scene = EditorSceneManager.GetSceneAt(i);
+            if(scene.path == levelToEdit.levelPath)
+            {
+                loaded = true;
+                if(scene != new_scene)
+                {
+                    EditorSceneManager.CloseScene(new_scene, true);
+                    new_scene = scene;
+                }
+            }
+        }
+        if (!loaded)
+        {
+            levelScene = EditorSceneManager.OpenScene(levelToEdit.levelPath, OpenSceneMode.Additive);
+            labelForCubeNetObject = new Dictionary<string, GameObject>();
+            foreach (GameObject root in levelScene.GetRootGameObjects())
+            {
+                labelForCubeNetObject[root.name] = root;
+            }
+            existingLevelLoaded = true;
+        }
+
+    }
+
+
     public void Awake()
     {
         Debug.Log("Awake");
     }
 
-    private static int[] GetAllLevels()
+    private static List<LevelObject> GetAllLevels()
     {
         string[] guids;
-        List<int> level_numbers = new List<int>();
+        List<LevelObject> levels = new List<LevelObject>();
         guids = AssetDatabase.FindAssets("t:LevelObject");
         foreach (string guid in guids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
-            LevelObject level = (LevelObject) AssetDatabase.LoadAssetAtPath(path, typeof(LevelObject));
+            LevelObject level = (LevelObject)AssetDatabase.LoadAssetAtPath(path, typeof(LevelObject));
+            levels.Add(level);
+        }
+        return levels;
+    }
+
+
+    private static int[] GetAllLevelsNumbers()
+    {
+
+        List<int> level_numbers = new List<int>();
+        foreach (LevelObject level in GetAllLevels())
+        {
             level_numbers.Add(level.levelNumber);
         }
         return level_numbers.ToArray();
@@ -96,18 +146,65 @@ public class LevelEditorWindow : EditorWindow
         return cubeNets.ToArray();
     }
 
-    private SerializedObject[] GetAllObjectives()
+    private SerializedObject[] GetAllObjectives(LevelObject existingLevel=null)
     {
-        TotalRollsObjective totalRollInstance = CreateInstance<TotalRollsObjective>();
-        serializedObjectForInstance[new SerializedObject(totalRollInstance)] = totalRollInstance;
+        serializedObjectForInstance = new Dictionary<SerializedObject, UnityEngine.Object>();
+        string path = "";
+        TotalRollsObjective totalRollInstance = null;
+        StarCollectionObjective starCollectionInstance = null;
+        TotalCubesObjective totalCubeInstance = null;
+        TimeLimitObjective timeLimitInstance = null;
 
-        StarCollectionObjective starCollectionInstance = CreateInstance<StarCollectionObjective>();
+        if (existingLevel)
+        {
+            foreach(ObjectiveObject objective in existingLevel.objectives)
+            {
+                if(objective.GetType() == typeof(TotalRollsObjective))
+                {
+                    totalRollInstance = objective as TotalRollsObjective;
+                }
+                else if(objective.GetType() == typeof(StarCollectionObjective))
+                {
+                    starCollectionInstance = objective as StarCollectionObjective;
+                }
+                else if(objective.GetType() == typeof(TotalCubesObjective))
+                {
+                    totalCubeInstance = objective as TotalCubesObjective;
+                }
+                else if(objective.GetType() == typeof(TimeLimitObjective))
+                {
+                    timeLimitInstance = objective as TimeLimitObjective;
+                }
+            }
+        }
+        if(totalRollInstance == null)
+        {
+            totalRollInstance = CreateInstance<TotalRollsObjective>();
+        }
+        path = "Assets/Objectives/TotalRollsObjective/TotalRollsObjectiveTrackerObject.asset";
+        totalRollInstance.trackerObject = (GenericObjectiveTracker)AssetDatabase.LoadAssetAtPath(path, typeof(GenericObjectiveTracker));
+        serializedObjectForInstance[new SerializedObject(totalRollInstance)] = totalRollInstance;
+        if(starCollectionInstance == null)
+        {
+            starCollectionInstance = CreateInstance<StarCollectionObjective>();
+        }
+        path = "Assets/Objectives/StarCollectionObjective/StarCollectionObjectiveTrackerObject.asset";
+        starCollectionInstance.trackerObject = (GenericObjectiveTracker)AssetDatabase.LoadAssetAtPath(path, typeof(GenericObjectiveTracker));
         serializedObjectForInstance[new SerializedObject(starCollectionInstance)] = starCollectionInstance;
 
-        TotalCubesObjective totalCubeInstance = CreateInstance<TotalCubesObjective>();
+        if (totalCubeInstance == null)
+        {
+            totalCubeInstance = CreateInstance<TotalCubesObjective>();
+        }
+        path = "Assets/Objectives/TotalCubesObjective/TotalCubesObjectiveTrackerObject.asset";
+        totalCubeInstance.trackerObject = (GenericObjectiveTracker)AssetDatabase.LoadAssetAtPath(path, typeof(GenericObjectiveTracker));
         serializedObjectForInstance[new SerializedObject(totalCubeInstance)] = totalCubeInstance;
-
-        TimeLimitObjective timeLimitInstance = CreateInstance<TimeLimitObjective>();
+        if (timeLimitInstance == null)
+        {
+            timeLimitInstance = CreateInstance<TimeLimitObjective>();
+        }
+        path = "Assets/Objectives/TimeLimitObjective/TimeLimitObjectiveTrackerObject.asset";
+        timeLimitInstance.trackerObject = (GenericObjectiveTracker)AssetDatabase.LoadAssetAtPath(path, typeof(GenericObjectiveTracker));
         serializedObjectForInstance[new SerializedObject(timeLimitInstance)] = timeLimitInstance;
 
         return serializedObjectForInstance.Keys.ToArray();
@@ -115,47 +212,95 @@ public class LevelEditorWindow : EditorWindow
 
     void CreateCubeNet(CubeNet cubeNet)
     {
+        if (levelScene.IsValid())
+        {
+            new_scene = levelScene;
+        }
         if (!new_scene.IsValid())
         {
             new_scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
         }
         EditorSceneManager.SetActiveScene(new_scene);
         string label = cubeNet.name;
-        while (labelForCubeNetObjects.ContainsKey(label))
+        while (labelForCubeNetObject.ContainsKey(label))
         {
             int index = 1;
             label = label + "_" + index.ToString();
             index++;
         }
-        labelForCubeNetObjects[label] = new List<GameObject>();
+
+        GameObject parentGameObject = new GameObject();
+        parentGameObject.name = label;
         foreach (Vector3 pos in cubeNet.vectors)
         {
             GameObject tileAnchor = (GameObject) PrefabUtility.InstantiatePrefab(tileAnchorPrefab);
             tileAnchor.transform.SetPositionAndRotation(pos, Quaternion.identity);
-            labelForCubeNetObjects[label].Add(tileAnchor);
+            tileAnchor.transform.SetParent(parentGameObject.transform);
         }
-        Selection.objects = labelForCubeNetObjects[label].ToArray();
+        labelForCubeNetObject[label] = parentGameObject;
+        GameObject[] selection = new GameObject[1];
+        selection[0] = parentGameObject;
+        Selection.objects = selection;
         EditorSceneManager.SetActiveScene(activeScene);
     }
 
-    void OnGUI()
+    void OnSceneChanged(int levelNumber)
+    {
+
+    }
+
+    string[] GetLevelNames(int[] levelNumbers)
     {
         List<string> levelNames = new List<string>();
-        foreach(int levelNumber in levelNumbers)
+        levelNames.Add("New Level");
+        foreach (int levelNumber in levelNumbers)
         {
             levelNames.Add(levelNumber.ToString());
         }
-        levelNames.Add("New Level");
+        return levelNames.ToArray();
+    }
+
+
+    void OnGUI()
+    {
+        string[] levelNames = GetLevelNames(levelNumbers);
         GUILayout.Label("Level Publisher", EditorStyles.boldLabel);
-        selectedIndex = EditorGUILayout.Popup("Level Number", selectedIndex, levelNames.ToArray());
+
+        selectedIndex = EditorGUILayout.Popup("Level Number", selectedIndex, levelNames);
         string levelName = levelNames[selectedIndex];
-        if(levelName == "New Level")
+        if (levelName == "New Level")
         {
             levelNumber = levelNumbers.Length + 1;
         }
-        else
+        if (levelToEdit)
+        {
+            if (levelToEdit.levelNumber != selectedIndex)
+            {
+                levelToEdit = null;
+                existingLevelLoaded = false;
+                objectives = GetAllObjectives();
+                labelForCubeNetObject = new Dictionary<string, GameObject>();
+                if (levelScene.IsValid())
+                {
+                    EditorSceneManager.CloseScene(levelScene, true);
+                }
+            }
+        }
+        if(levelToEdit == null && levelName != "New Level")
         {
             levelNumber = Int32.Parse(levelName);
+            foreach (LevelObject level in GetAllLevels())
+            {
+                if(level.levelNumber == levelNumber)
+                {
+                    levelToEdit = level;
+                    break;
+                }
+            }
+            if (levelToEdit)
+            {
+                InitFromLevel(levelToEdit);
+            }
         }
         GUILayout.Label("Create Cube Nets", EditorStyles.boldLabel);
         GUILayout.BeginHorizontal();
@@ -175,27 +320,27 @@ public class LevelEditorWindow : EditorWindow
         string keyToDelete = "";
         if (unfoldedCubeNets)
         {
-            foreach (string label in labelForCubeNetObjects.Keys)
+            foreach (string label in labelForCubeNetObject.Keys)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(label);
                 if (GUILayout.Button("Select"))
                 {
-                    Selection.objects = labelForCubeNetObjects[label].ToArray();
+                    GameObject parentObject = labelForCubeNetObject[label];
+                    GameObject[] selection = new GameObject[1];
+                    selection[0] = parentObject;
+                    Selection.objects = selection;
                 }
                 if (GUILayout.Button("Remove"))
                 {
                     keyToDelete = label;
-                    foreach (GameObject boxTileAnchor in labelForCubeNetObjects[label])
-                    {
-                        DestroyImmediate(boxTileAnchor);
-                    }
+                    DestroyImmediate(labelForCubeNetObject[label]);
                 }
                 EditorGUILayout.EndHorizontal();
             }
             if (keyToDelete != "")
             {
-                labelForCubeNetObjects.Remove(keyToDelete);
+                labelForCubeNetObject.Remove(keyToDelete);
             }
         }
 
@@ -206,6 +351,16 @@ public class LevelEditorWindow : EditorWindow
             {
                 toggled = toggleForObjective[objective];
             }
+            if (levelToEdit)
+            {
+                foreach(ObjectiveObject existingObjective in levelToEdit.objectives)
+                {
+                    if(objective.targetObject == existingObjective)
+                    {
+                        toggled = true;
+                    }
+                }
+            }
             SerializedProperty props = objective.GetIterator();
             toggled = EditorGUILayout.BeginToggleGroup(objective.targetObject.ToString(), toggled);
             toggleForObjective[objective] = toggled;
@@ -213,9 +368,9 @@ public class LevelEditorWindow : EditorWindow
             {
                 if(objective.targetObject.GetType() == typeof(TotalCubesObjective))
                 {
-                    if(props.name == "totalCubes")
+                    if(props.name == "totalCubes" && levelToEdit == null)
                     {
-                        props.intValue = labelForCubeNetObjects.Keys.Count;
+                        props.intValue = labelForCubeNetObject.Keys.Count;
                     }
                 }
                 if(props.name == "m_Script")
@@ -256,46 +411,41 @@ public class LevelEditorWindow : EditorWindow
                 allScenes.Add(new EditorBuildSettingsScene(new_scene.path, true));
                 EditorBuildSettings.scenes = allScenes.ToArray();
             }
-
-            newLevel.labelForCubeNetPositions = new Dictionary<string, List<Vector3>>();
-            foreach(KeyValuePair<string, List<GameObject>> entry in labelForCubeNetObjects)
+            foreach(KeyValuePair<string, GameObject> entry in labelForCubeNetObject)
             {
-                List<Vector3> tileAnchorsPositions = new List<Vector3>();
-                foreach (GameObject go in entry.Value)
+                foreach (Transform child in entry.Value.transform)
                 {
-                    Vector3 new_pos = go.transform.position;
+                    Vector3 new_pos = child.position;
                     new_pos.x = RoundToNearestHalf(new_pos.x);
                     new_pos.y = RoundToNearestHalf(new_pos.y);
                     new_pos.z = RoundToNearestHalf(new_pos.z);
-                    go.transform.position = new_pos;
-                    tileAnchorsPositions.Add(go.transform.position);
+                    child.position = new_pos;
                 }
-                newLevel.labelForCubeNetPositions[entry.Key] = tileAnchorsPositions;
             }
-            List<ScriptableObject> new_objectives = new List<ScriptableObject>();
-            AssetDatabase.CreateAsset(newLevel, assetPathAndName);
+            newLevel.cubeNets = labelForCubeNetObject.Values.ToArray();
+            List<ObjectiveObject> toggledObjectives = new List<ObjectiveObject>();
             foreach (SerializedObject objective in objectives)
             {
                 if (toggleForObjective.ContainsKey(objective))
                 {
                     if (toggleForObjective[objective])
                     {
-                        ScriptableObject instance = serializedObjectForInstance[objective] as ScriptableObject;
+                        ObjectiveObject instance = serializedObjectForInstance[objective] as ObjectiveObject;
                         string objectiveName = instance.ToString().Replace(" (", "").Replace(")", "");
                         string objectiveAssetPath = path + "/" + objectiveName + ".asset";
                         AssetDatabase.CreateAsset(instance, objectiveAssetPath);
-                        new_objectives.Add(instance);
+                        ObjectiveObject objectiveAsset = AssetDatabase.LoadAssetAtPath(objectiveAssetPath, typeof(ObjectiveObject)) as ObjectiveObject;
+                        toggledObjectives.Add(objectiveAsset);
                     }
                 }
             }
-            newLevel.objectives = new_objectives.ToArray();
+            newLevel.objectives = toggledObjectives.ToArray();
+            AssetDatabase.CreateAsset(newLevel, assetPathAndName);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             EditorUtility.FocusProjectWindow();
             EditorSceneManager.CloseScene(new_scene, true);
-            levelNumbers = GetAllLevels();
-            selectedIndex = levelNumbers.Count();
-            objectives = GetAllObjectives();
+            InitVars();
         }
     }
 

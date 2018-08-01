@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-[CreateAssetMenu]
+[CreateAssetMenu(menuName = "Sets/Box Tile Anchors")]
 public class BoxTileAnchorsRuntimeSet : RuntimeSet<BoxTileAnchorController>
 {
 

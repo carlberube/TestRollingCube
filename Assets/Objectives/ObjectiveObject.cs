@@ -3,6 +3,7 @@
 
 public class ObjectiveObject : ScriptableObject
 {
+    public GenericObjectiveTracker trackerObject;
 }
 
 

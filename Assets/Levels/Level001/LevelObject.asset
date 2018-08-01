@@ -13,4 +13,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelNumber: 1
   levelPath: Assets/Scenes/Level001/LevelScene.unity
-  objectives: []
+  objectives:
+  - {fileID: 11400000, guid: 18e7e5ab698194a4e97b362c49e9f9ff, type: 2}
+  cubeNets:
+  - {fileID: 0}
+  - {fileID: 0}

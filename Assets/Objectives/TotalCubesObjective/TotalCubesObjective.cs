@@ -5,4 +5,5 @@ using UnityEngine;
 public class TotalCubesObjective : ObjectiveObject
 {
     public int totalCubes;
+
 }

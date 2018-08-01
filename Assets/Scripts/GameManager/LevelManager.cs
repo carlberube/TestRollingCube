@@ -7,6 +7,7 @@ using UnityEngine.Events;
 
 public class LevelManager : MonoBehaviour {
 
+    public ObjectiveObjectsRuntimeSet objectiveObjects;
     public LevelObject currentLevel;
     public int levelNumber;
     public List<LevelObject> allLevels;
@@ -70,6 +71,10 @@ public class LevelManager : MonoBehaviour {
         SceneManager.SetActiveScene(scene);
         onLevelLoaded.Invoke();
         SceneManager.SetActiveScene(currentScene);
+        foreach(ObjectiveObject objective in currentLevel.objectives)
+        {
+            objectiveObjects.Add(objective);
+        }
     }
 
 }
