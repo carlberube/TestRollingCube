@@ -8,8 +8,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7ec80e49e4e196a438faad43111b240d, type: 3}
-  m_Name: TotalCubesObjective
+  m_Script: {fileID: 11500000, guid: 7915c991f6591274583c6619ae66f6c3, type: 3}
+  m_Name: TimeLimitObjective
   m_EditorClassIdentifier: 
-  trackerObject: {fileID: 11400000, guid: 11601f31afbf4e341a5c11ccab384e20, type: 2}
-  totalCubes: 33
+  trackerObject: {fileID: 11400000, guid: 9fadfa0d30c6e2f40bfa93bd976bbdb1, type: 2}
+  totalTime: 20

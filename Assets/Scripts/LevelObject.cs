@@ -6,10 +6,10 @@ using System.Collections.Generic;
 
 public class LevelObject : ScriptableObject
 {
-    public int levelNumber;
+    public string levelName;
     public string levelPath;
     public ObjectiveObject[] objectives;
-    public GameObject[] cubeNets;
+    public string[] cubeNetNames;
 
 }
 

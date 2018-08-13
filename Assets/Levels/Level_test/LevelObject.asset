@@ -11,10 +11,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1bc1f98080efff4d9fa4668b3e0d9c6, type: 3}
   m_Name: LevelObject
   m_EditorClassIdentifier: 
-  levelNumber: 1
-  levelPath: Assets/Scenes/Level001/LevelScene.unity
+  levelName: test
+  levelPath: Assets/Scenes/Level_test/LevelScene.unity
   objectives:
-  - {fileID: 11400000, guid: 18e7e5ab698194a4e97b362c49e9f9ff, type: 2}
-  cubeNets:
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 11400000, guid: 6d876dde0ebd8f7428050b6e7202f622, type: 2}
+  cubeNetNames:
+  - 302

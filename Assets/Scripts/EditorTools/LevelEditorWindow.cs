@@ -10,7 +10,6 @@ using System.Linq;
 
 public class LevelEditorWindow : EditorWindow
 {
-    int[] levelNumbers;
     CubeNet[] cubeNets;
     SerializedObject[] objectives;
 
@@ -18,7 +17,6 @@ public class LevelEditorWindow : EditorWindow
 
     GameObject tileAnchorPrefab;
 
-    public int levelNumber;
     public bool existingLevelLoaded = false;
     public LevelObject levelToEdit = null;
     public Scene activeScene;
@@ -26,10 +24,13 @@ public class LevelEditorWindow : EditorWindow
     public Scene levelScene;
     public string levelPath;
     public int selectedIndex;
+    public int previousSelectedIndex;
     public Dictionary<string, GameObject> labelForCubeNetObject;
     public Dictionary<SerializedObject, bool> toggleForObjective;
     public Dictionary<CubeNet, Texture2D> textureForCubeNet;
     public Dictionary<SerializedObject, UnityEngine.Object> serializedObjectForInstance;
+
+    public string levelName = "New Level";
 
 
     [MenuItem("Window/Level Publisher")]
@@ -44,6 +45,7 @@ public class LevelEditorWindow : EditorWindow
         InitVars();
         activeScene = EditorSceneManager.GetActiveScene();
         selectedIndex = 0;
+        textureForCubeNet = new Dictionary<CubeNet, Texture2D>();
         foreach (CubeNet cubeNet in cubeNets)
         {
             Sprite sprite = cubeNet.thumbnailSprite;
@@ -61,10 +63,8 @@ public class LevelEditorWindow : EditorWindow
     public void InitVars()
     {
         toggleForObjective = new Dictionary<SerializedObject, bool>();
-        labelForCubeNetObject = new Dictionary<string, GameObject>();
-        textureForCubeNet = new Dictionary<CubeNet, Texture2D>();
+        labelForCubeNetObject = new Dictionary<string, GameObject>();        
         tileAnchorPrefab = (GameObject)AssetDatabase.LoadAssetAtPath("Assets/BoxTileAnchor.prefab", typeof(GameObject));
-        levelNumbers = GetAllLevelsNumbers();
         cubeNets = GetAllCubeNets();
         objectives = GetAllObjectives();
     }
@@ -118,18 +118,6 @@ public class LevelEditorWindow : EditorWindow
             levels.Add(level);
         }
         return levels;
-    }
-
-
-    private static int[] GetAllLevelsNumbers()
-    {
-
-        List<int> level_numbers = new List<int>();
-        foreach (LevelObject level in GetAllLevels())
-        {
-            level_numbers.Add(level.levelNumber);
-        }
-        return level_numbers.ToArray();
     }
 
     private static CubeNet[] GetAllCubeNets()
@@ -230,6 +218,7 @@ public class LevelEditorWindow : EditorWindow
         }
 
         GameObject parentGameObject = new GameObject();
+        parentGameObject.AddComponent<EditModeSnapController>();
         parentGameObject.name = label;
         foreach (Vector3 pos in cubeNet.vectors)
         {
@@ -249,13 +238,13 @@ public class LevelEditorWindow : EditorWindow
 
     }
 
-    string[] GetLevelNames(int[] levelNumbers)
+    string[] GetLevelNames()
     {
         List<string> levelNames = new List<string>();
         levelNames.Add("New Level");
-        foreach (int levelNumber in levelNumbers)
+        foreach (LevelObject level in GetAllLevels())
         {
-            levelNames.Add(levelNumber.ToString());
+            levelNames.Add(level.levelName);
         }
         return levelNames.ToArray();
     }
@@ -263,18 +252,21 @@ public class LevelEditorWindow : EditorWindow
 
     void OnGUI()
     {
-        string[] levelNames = GetLevelNames(levelNumbers);
+        string[] levelNames = GetLevelNames();
         GUILayout.Label("Level Publisher", EditorStyles.boldLabel);
 
-        selectedIndex = EditorGUILayout.Popup("Level Number", selectedIndex, levelNames);
-        string levelName = levelNames[selectedIndex];
-        if (levelName == "New Level")
+        selectedIndex = EditorGUILayout.Popup("Levels", selectedIndex, levelNames);
+        previousSelectedIndex = selectedIndex;
+        if(selectedIndex != 0)
         {
-            levelNumber = levelNumbers.Length + 1;
+            levelName = levelNames[selectedIndex];
         }
+
+        levelName = GUILayout.TextField(levelName);
+
         if (levelToEdit)
         {
-            if (levelToEdit.levelNumber != selectedIndex)
+            if (selectedIndex == 0 || levelToEdit.levelName != levelName)
             {
                 levelToEdit = null;
                 existingLevelLoaded = false;
@@ -286,12 +278,11 @@ public class LevelEditorWindow : EditorWindow
                 }
             }
         }
-        if(levelToEdit == null && levelName != "New Level")
+        if(levelToEdit == null && selectedIndex != 0)
         {
-            levelNumber = Int32.Parse(levelName);
             foreach (LevelObject level in GetAllLevels())
             {
-                if(level.levelNumber == levelNumber)
+                if(level.levelName == levelName)
                 {
                     levelToEdit = level;
                     break;
@@ -385,15 +376,15 @@ public class LevelEditorWindow : EditorWindow
         if (GUILayout.Button("Publish Level"))
         {
             string path = "Assets/Levels";
-            string guid = AssetDatabase.CreateFolder(path, String.Format("Level{0:000}", levelNumber));
+            string guid = AssetDatabase.CreateFolder(path, String.Format("Level_{0}", levelName));
             path = AssetDatabase.GUIDToAssetPath(guid);
             string levelAssetPath = path + "/LevelObject";
             string assetPathAndName = levelAssetPath + ".asset";
             LevelObject newLevel = CreateInstance<LevelObject>();
-            newLevel.levelNumber = levelNumber;
+            newLevel.levelName = levelName;
 
             string scenesPath = "Assets/Scenes";
-            string newSceneGuid = AssetDatabase.CreateFolder(scenesPath, String.Format("Level{0:000}", levelNumber));
+            string newSceneGuid = AssetDatabase.CreateFolder(scenesPath, String.Format("Level_{0}", levelName));
             scenesPath = AssetDatabase.GUIDToAssetPath(newSceneGuid);
             EditorSceneManager.SaveScene(new_scene, scenesPath + "/LevelScene.unity");
             newLevel.levelPath = new_scene.path;
@@ -422,7 +413,7 @@ public class LevelEditorWindow : EditorWindow
                     child.position = new_pos;
                 }
             }
-            newLevel.cubeNets = labelForCubeNetObject.Values.ToArray();
+            newLevel.cubeNetNames = labelForCubeNetObject.Keys.ToArray();
             List<ObjectiveObject> toggledObjectives = new List<ObjectiveObject>();
             foreach (SerializedObject objective in objectives)
             {

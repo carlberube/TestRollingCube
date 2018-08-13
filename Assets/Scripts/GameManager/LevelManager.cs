@@ -9,7 +9,7 @@ public class LevelManager : MonoBehaviour {
 
     public ObjectiveObjectsRuntimeSet objectiveObjects;
     public LevelObject currentLevel;
-    public int levelNumber;
+    public string levelName;
     public List<LevelObject> allLevels;
 
     public UnityEvent onLevelLoaded;
@@ -51,7 +51,7 @@ public class LevelManager : MonoBehaviour {
         currentLevel = null;
         foreach(LevelObject level in allLevels)
         {
-            if(level.levelNumber == levelNumber)
+            if(level.levelName == levelName)
             {
                 currentLevel = level;
             }
